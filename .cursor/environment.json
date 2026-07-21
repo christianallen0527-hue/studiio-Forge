@@ -1,0 +1,9 @@
+{
+  "install": "python3 -m venv .venv && .venv/bin/pip install -U pip && .venv/bin/pip install -r requirements.txt",
+  "terminals": [
+    {
+      "name": "studio-forge-ui",
+      "command": "STUDIO_FORGE=1 .venv/bin/python -u ui/server.py"
+    }
+  ]
+}

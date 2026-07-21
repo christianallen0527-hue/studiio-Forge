@@ -1,0 +1,27 @@
+---
+description: Studio memory + major editorial learning brain (daily YouTube, ratings -1..20, never-again)
+alwaysApply: true
+---
+
+# Obsidian memory + learning brain (always)
+
+Read before sponsor/client work:
+
+1. `context_docs/obsidian/HOME.md`
+2. `context_docs/obsidian/Wanted vs Not Okay.md`
+3. `context_docs/obsidian/Never Again.md`
+4. `context_docs/obsidian/Editorial Learning.md`
+5. HPM note when touching that ad
+
+## Learning is a major subsystem
+
+- Daily: `python -m autoedit.learning daily` (podcasts / talking_head / long_form / shorts)
+- Rate every delivered edit **-1 (bad) … 20 (perfect)** — target 18+
+- Every dislike → `python -m autoedit.learning dislike "…" --situation <context>`
+- Never show a sponsor until `sponsor_qc.review_and_fix` + never-again rules pass
+
+## Hard creative rules (HPM)
+
+- Original first-ad upbeat music only; seamless; no typing/click SFX
+- No 80s navy/gold cards; modern kinetic over live house
+- No shaky tails

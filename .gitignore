@@ -11,7 +11,11 @@ test/raw/
 !.env.example
 # Learning samples are large / regenerable; keep the growing store.json
 data/learning/samples/
-.cursor/
+# Keep Cursor cloud env + project rules in git; ignore local-only cursor junk
+.cursor/*
+!.cursor/environment.json
+!.cursor/rules/
+!.cursor/rules/**
 dist/
 *.log
 /tmp/
