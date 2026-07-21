@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AUTOEDITING FORGE — the automated editor</title>
+<style>
+  :root{
+    --bg:#0a0706; --bg2:#0f0a08; --ink:#f7efe6; --muted:#9c9086; --faint:#7d7268;
+    --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.14);
+    --glass:rgba(22,17,14,.66); --glass2:rgba(30,23,19,.78);
+    --ember:#ff6a2b; --ember2:#e04d19; --emberlt:#ff8a4d;
+    --gold:#f0b256; --gold2:#c88632;
+    --good:#5ec87f; --bad:#e0664f; --quiet:#f0b256; --loud:#ff6a2b; --silent:#8a7f75;
+    --w:#ff8a4d; --m:#f0b256; --c:#c88632; --p:#8a5a24;   /* shot colours */
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,monospace;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:radial-gradient(1200px 700px at 50% -10%,#1a0f08 0%,var(--bg) 55%);
+    color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  #forge{position:fixed;inset:0;z-index:-2;filter:blur(58px) saturate(1.3);opacity:.62}
+  .grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.04;
+    background-image:radial-gradient(circle,#fff 1px,transparent 1px);background-size:3px 3px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 130px}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--ember);outline-offset:2px;border-radius:4px}
+  h1:focus{outline:none}
+
+  header{display:flex;align-items:center;gap:13px;padding:26px 0 8px;flex-wrap:wrap}
+  .mark{width:38px;height:38px;border-radius:11px;flex:none;position:relative;
+    background:linear-gradient(155deg,var(--emberlt),var(--ember2));display:grid;place-items:center;
+    box-shadow:0 10px 30px -8px rgba(255,106,43,.7),inset 0 1px 0 rgba(255,255,255,.35)}
+  .mark svg{width:20px;height:20px;display:block}
+  .brand b{font-weight:720;letter-spacing:.16em;font-size:14px;display:block;line-height:1.1}
+  .brand span{color:var(--muted);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase}
+  .grow{flex:1}
+  .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 12px;
+    border-radius:999px;display:flex;align-items:center;gap:7px;backdrop-filter:blur(8px)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);transition:.4s}
+  .dot.on{background:var(--good);box-shadow:0 0 12px var(--good)}
+  .hbtn{font-size:12.5px;color:var(--muted);border:1px solid var(--line);background:rgba(255,255,255,.03);
+    padding:7px 14px;border-radius:999px;cursor:pointer;font-family:var(--font);transition:.15s;backdrop-filter:blur(8px)}
+  .hbtn:hover{color:var(--ember);border-color:rgba(255,106,43,.45)}
+  .back{font-size:13px;color:var(--muted);cursor:pointer;background:none;border:none;
+    font-family:var(--font);padding:6px 0;margin-top:8px}
+  .back:hover{color:var(--ember)}
+
+  .hero{padding:34px 0 10px}
+  .kicker{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--ember);
+    font-weight:640;margin:0 0 14px;display:inline-flex;align-items:center;gap:9px}
+  .kicker::before{content:"";width:22px;height:1px;background:linear-gradient(90deg,var(--ember),transparent)}
+  h1{font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.028em;font-weight:740;
+    margin:0 0 15px;text-wrap:balance;
+    background:linear-gradient(176deg,#fff 0%,#ffd9c0 60%,#ff9a63 130%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{color:var(--muted);font-size:17px;margin:0 0 6px;max-width:58ch;line-height:1.6}
+
+  /* mode cards */
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}
+  .mode{position:relative;border:1px solid var(--line);border-radius:20px;padding:27px;
+    background:var(--glass);backdrop-filter:blur(18px);cursor:pointer;overflow:hidden;
+    transition:transform .35s var(--ease),border-color .3s,box-shadow .35s}
+  .mode:hover,.mode:focus-visible{transform:translateY(-5px);border-color:var(--line2);
+    box-shadow:0 34px 80px -34px rgba(0,0,0,.9)}
+  .mode::before{content:"";position:absolute;inset:0;opacity:0;transition:.35s;
+    background:radial-gradient(560px 220px at 28% -10%,rgba(255,106,43,.22),transparent)}
+  .mode:hover::before{opacity:1}
+  .mode::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--ember),transparent);opacity:0;transition:.35s}
+  .mode:hover::after{opacity:.9}
+  .mode .badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ember);border:1px solid rgba(255,106,43,.4);border-radius:999px;
+    padding:5px 11px;margin-bottom:20px}
+  .mode h3{font-size:24px;font-weight:700;margin:0 0 8px;letter-spacing:-.015em}
+  .mode p{color:var(--muted);font-size:14px;margin:0 0 18px;line-height:1.55}
+  .mode .go-in{display:flex;align-items:center;gap:8px;color:var(--ember);font-size:14px;font-weight:600}
+  .mode.pri{background:linear-gradient(160deg,rgba(52,26,12,.72),var(--glass));border-color:rgba(255,106,43,.34)}
+
+  /* generic surfaces */
+  .card{background:var(--glass);border:1px solid var(--line);border-radius:18px;
+    padding:24px;margin-bottom:18px;backdrop-filter:blur(18px)}
+  .card h2{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 3px;font-weight:640}
+  .card .hint{color:var(--faint);font-size:13px;margin:0 0 18px}
+  label.fld{display:block;margin-bottom:16px}
+  label.fld .lbl{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
+  input[type=text],input[type=password]{width:100%;background:rgba(0,0,0,.32);border:1px solid var(--line);
+    color:var(--ink);border-radius:11px;padding:13px;font-size:15px;font-family:var(--font)}
+  input[type=text]:focus,input[type=password]:focus{outline:none;border-color:var(--ember);box-shadow:0 0 0 3px rgba(255,106,43,.16)}
+  input::placeholder{color:var(--faint)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  .browse{display:flex;gap:10px;margin-bottom:12px}
+  .browse input{flex:1}
+  .btn{border:1px solid var(--line2);background:rgba(255,255,255,.04);color:var(--ink);
+    border-radius:11px;padding:12px 17px;font-size:14px;font-family:var(--font);cursor:pointer;transition:.15s;white-space:nowrap}
+  .btn:hover{border-color:var(--ember);background:rgba(255,106,43,.1)}
+  .btn:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+  .crumbs{display:flex;flex-wrap:wrap;gap:3px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:9px;min-height:16px}
+  .crumbs button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:5px;font-family:var(--font)}
+  .crumbs button:hover{color:var(--ember)}
+  .listing{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(0,0,0,.28);max-height:220px;overflow-y:auto}
+  .item{display:flex;align-items:center;gap:11px;padding:9px 13px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.03);font-size:14px}
+  .item:last-child{border-bottom:none}
+  .item:hover{background:rgba(255,255,255,.045)}
+  .item .ic{width:16px;text-align:center;color:var(--faint);flex:none;font-size:11px}
+  .item.vid .ic{color:var(--ember)}
+  .item .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .add{font-size:11px;color:var(--ember);opacity:0;transition:.15s}
+  .item:hover .add{opacity:1}
+  .empty{padding:18px;color:var(--faint);font-size:13px}
+
+  .cams{display:flex;flex-direction:column;gap:10px}
+  .cam{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .cam .ci{width:26px;height:26px;border-radius:8px;background:rgba(255,106,43,.16);display:grid;place-items:center;color:var(--ember);flex:none;font-size:12px}
+  .cam .cname{width:110px;background:transparent;border:none;color:var(--ink);font-size:14px;font-weight:560;font-family:var(--font);padding:2px 0}
+  .cam .cname:focus{outline:none}
+  .cam .vf{flex:1;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cam select{background:rgba(0,0,0,.32);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px;font-size:12px;max-width:150px;font-family:var(--font)}
+  .cam .x{border:none;background:none;color:var(--faint);cursor:pointer;font-size:16px}
+  .cam .x:hover{color:var(--bad)}
+  .wide-tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold2);border-radius:6px;padding:3px 6px;cursor:pointer}
+  .wide-tag.on{background:var(--gold2);color:#1a1206}
+  .none-cams{color:var(--faint);font-size:13px;padding:4px 0}
+
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .tog{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:13px;cursor:pointer;transition:.15s}
+  .tog:hover{border-color:var(--line2)}
+  .tog .sw{width:38px;height:22px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line);position:relative;flex:none;transition:.2s}
+  .tog .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--faint);transition:.2s var(--ease)}
+  .tog.on .sw{background:linear-gradient(var(--emberlt),var(--ember2))}
+  .tog.on .sw::after{transform:translateX(16px);background:#1a1206}
+  .tog .tt b{font-weight:560;font-size:14px;display:block}
+  .tog .tt span{color:var(--muted);font-size:12px}
+
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:rgba(0,0,0,.28)}
+  .seg button{background:transparent;border:none;color:var(--muted);padding:10px 16px;font-size:13px;cursor:pointer;font-family:var(--font);transition:.15s}
+  .seg button.on{background:rgba(255,106,43,.16);color:var(--ember)}
+  .seglbl{font-size:13px;color:var(--muted);margin:0 0 8px}
+
+  .go{position:sticky;bottom:20px;margin-top:24px;z-index:5}
+  .build{width:100%;border:none;border-radius:15px;padding:18px;font-size:16.5px;font-weight:680;font-family:var(--font);cursor:pointer;color:#1a1005;letter-spacing:.01em;position:relative;overflow:hidden;
+    background:linear-gradient(150deg,var(--emberlt),var(--ember2));box-shadow:0 18px 54px -16px rgba(255,106,43,.66);transition:.18s var(--ease)}
+  .build::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:translateX(-120%)}
+  .build:hover{transform:translateY(-2px);box-shadow:0 26px 66px -16px rgba(255,106,43,.82)}
+  .build:hover::after{transform:translateX(120%);transition:transform .9s var(--ease)}
+  .build:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .build:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .ghostrow{text-align:center;margin-top:12px}
+  .ghost{background:none;border:none;color:var(--muted);font-size:13px;font-family:var(--font);cursor:pointer;padding:6px 10px;border-radius:8px}
+  .ghost:hover{color:var(--ember)}
+  .err{color:var(--bad);font-size:13.5px;margin-top:10px;text-align:center;min-height:18px}
+
+  /* ── LOGIN ──────────────────────────────────────────── */
+  .login-stage{min-height:calc(100vh - 140px);display:grid;place-items:center;padding:24px 0}
+  .login-card{width:min(430px,100%);padding:36px 32px 28px;text-align:center}
+  .login-card .mark{width:52px;height:52px;border-radius:15px;margin:0 auto 20px}
+  .login-card .mark svg{width:27px;height:27px}
+  .login-card h1{font-size:clamp(26px,5vw,34px);margin-bottom:8px}
+  .login-card .lede{font-size:14.5px;margin:0 auto 24px;max-width:34ch}
+  .login-card form{text-align:left}
+  .login-card .build{margin-top:4px}
+
+  /* ── HOME / DASHBOARD ───────────────────────────────── */
+  .cta{margin:26px 0 22px}
+  .homegrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+  .homegrid .card{margin-bottom:0}
+  .health{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:11px}
+  .hpill{display:flex;gap:11px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:13px 15px;min-width:0}
+  .hpill .hdot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none;background:var(--faint)}
+  .hpill.ok .hdot{background:var(--good);box-shadow:0 0 10px rgba(94,200,127,.55)}
+  .hpill.bad .hdot{background:var(--bad);box-shadow:0 0 10px rgba(224,102,79,.55)}
+  .hpill .ht{min-width:0}
+  .hpill b{display:block;font-size:13.5px;font-weight:620}
+  .hpill span{color:var(--muted);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis}
+  .note{color:var(--faint);font-size:12.5px;margin:12px 0 0}
+  .note:empty{display:none}
+  .jobs{display:flex;flex-direction:column;gap:10px}
+  .jobrow{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:rgba(255,255,255,.03);
+    border:1px solid var(--line);border-radius:13px;padding:13px 15px;color:var(--ink);font-family:var(--font);
+    font-size:14px;cursor:pointer;transition:.15s}
+  .jobrow:hover{border-color:rgba(255,106,43,.4)}
+  .jobrow[disabled]{cursor:default}
+  .jobrow[disabled]:hover{border-color:var(--line)}
+  .jobrow .jdot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--faint)}
+  .jobrow.running .jdot{background:var(--ember);box-shadow:0 0 10px rgba(255,106,43,.7);animation:pulse 1.6s ease-in-out infinite}
+  .jobrow.done .jdot{background:var(--good)}
+  .jobrow.error .jdot{background:var(--bad)}
+  @keyframes pulse{50%{opacity:.35}}
+  .jobrow .jt{flex:1;min-width:0}
+  .jobrow .jt b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .jobrow .jt span{color:var(--muted);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .jobrow .jbar{width:110px;height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;flex:none}
+  .jobrow .jbar i{display:block;height:100%;background:linear-gradient(90deg,var(--ember2),var(--emberlt));transition:width .5s var(--ease)}
+  .jobrow .jgo{color:var(--ember);font-size:12.5px;font-weight:620;flex:none}
+  .issues{display:flex;flex-direction:column;gap:9px}
+  .issue{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;color:var(--muted);border:1px solid rgba(240,178,86,.28);
+    border-radius:12px;padding:11px 14px;background:rgba(240,178,86,.04);line-height:1.45}
+  .issue .ik{flex:none;font-size:12px;margin-top:1px;color:var(--gold)}
+  .issue.error{border-color:rgba(224,102,79,.38);background:rgba(224,102,79,.05)}
+  .issue.error .ik{color:var(--bad)}
+  .issue .im{flex:1;min-width:0;overflow-wrap:anywhere}
+  .issue time{color:var(--faint);font-size:11.5px;flex:none;margin-top:1px}
+
+  /* ── REVIEW ─────────────────────────────────────────── */
+  .revsum{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid var(--line);
+    border-radius:16px;padding:16px 20px;margin-bottom:18px;background:linear-gradient(120deg,rgba(52,26,12,.5),var(--glass))}
+  .revsum .rs-n{font-size:22px;font-weight:720;letter-spacing:-.01em}
+  .revsum .rs-sub{color:var(--muted);font-size:13.5px}
+  .revsum .rs-grow{flex:1}
+  .verdict{font-size:12px;font-weight:640;letter-spacing:.04em;padding:7px 13px;border-radius:999px;display:inline-flex;align-items:center;gap:7px}
+  .verdict.ok{color:var(--good);border:1px solid rgba(94,200,127,.4);background:rgba(94,200,127,.08)}
+  .verdict.warn{color:var(--gold);border:1px solid rgba(240,178,86,.42);background:rgba(240,178,86,.09)}
+
+  .revload{border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px;background:var(--glass);display:flex;align-items:center;gap:16px}
+  .revload .rl-sp{width:22px;height:22px;border:2.5px solid rgba(255,106,43,.28);border-top-color:var(--ember);border-radius:50%;animation:spin .8s linear infinite;flex:none}
+  .revload .rl-t b{display:block;font-weight:600;font-size:15px}
+  .revload .rl-t span{color:var(--muted);font-size:13px}
+  .revload .rl-bar{flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;min-width:80px;max-width:200px}
+  .revload .rl-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ember2),var(--emberlt));transition:width .5s var(--ease)}
+
+  .revgrid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:6px}
+  .clip{display:grid;grid-template-columns:150px 1fr;gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--glass);transition:.25s var(--ease)}
+  .clip:hover{border-color:var(--line2)}
+  .clip.flagged{border-color:rgba(255,106,43,.34)}
+  .clip.bad{border-color:rgba(224,102,79,.4)}
+  .clip .thumb{position:relative;background:#000;aspect-ratio:16/10;overflow:hidden}
+  .clip .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .clip .thumb .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--faint);font-size:22px;
+    background:repeating-linear-gradient(115deg,#141010,#141010 10px,#191312 10px,#191312 20px)}
+  .clip .thumb .rotpin{position:absolute;top:8px;left:8px;font-size:10px;font-weight:640;letter-spacing:.06em;
+    background:rgba(255,106,43,.9);color:#1a1005;padding:4px 8px;border-radius:7px}
+  .clip .body{padding:16px 18px;min-width:0}
+  .clip .ctop{display:flex;align-items:baseline;gap:10px;margin-bottom:11px}
+  .clip .cname{font-weight:640;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+  .clip .cspec{color:var(--faint);font-size:11.5px;font-family:var(--mono);white-space:nowrap;flex:none}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:560;padding:6px 11px;border-radius:9px;border:1px solid var(--line);color:var(--muted);background:rgba(255,255,255,.03)}
+  .chip .cd{width:8px;height:8px;border-radius:50%;flex:none}
+  .chip.ok{color:var(--good);border-color:rgba(94,200,127,.34)}
+  .chip.warn{color:var(--gold);border-color:rgba(240,178,86,.36)}
+  .chip.hot{color:var(--ember);border-color:rgba(255,106,43,.4)}
+  .chip.bad{color:var(--bad);border-color:rgba(224,102,79,.4)}
+  .chip.mono{font-family:var(--mono);font-size:11px}
+  .recs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  .recs li{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.45}
+  .recs li .rk{color:var(--ember);flex:none;font-size:12px;margin-top:1px}
+  .recs li.clean .rk{color:var(--good)}
+
+  /* run */
+  .steps{display:flex;flex-direction:column;gap:1px;margin:8px 0 18px}
+  .step{display:flex;align-items:center;gap:14px;padding:12px 4px;opacity:.4;transition:.4s var(--ease)}
+  .step.active{opacity:1}.step.done{opacity:.75}
+  .step .mk{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--line2);display:grid;place-items:center;flex:none;font-size:12px;color:var(--muted);transition:.4s}
+  .step.active .mk{border-color:var(--ember);color:var(--ember);box-shadow:0 0 18px rgba(255,106,43,.5)}
+  .step.active .mk .sp{width:11px;height:11px;border:2px solid var(--ember);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+  .step.done .mk{background:var(--good);border-color:var(--good);color:#07070a}
+  .step b{font-weight:500;font-size:15px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .console{background:rgba(0,0,0,.55);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-family:var(--mono);font-size:12px;color:#9b968d;max-height:170px;overflow-y:auto;white-space:pre-wrap;line-height:1.7}
+  .console .k{color:var(--ember)}
+
+  /* shot map */
+  .shotmap{display:flex;height:44px;border-radius:10px;overflow:hidden;border:1px solid var(--line);margin:4px 0 10px}
+  .shotmap .seg-s{position:relative;transition:flex .5s var(--ease);min-width:2px}
+  .shotmap .seg-s span{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#160d06;font-weight:600;opacity:.85}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+  video{width:100%;border-radius:13px;background:#000;display:block;border:1px solid var(--line)}
+  .shorts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-top:6px}
+  .short video{aspect-ratio:9/16;object-fit:cover}
+  .short .dl{display:block;text-align:center;font-size:12px;color:var(--muted);text-decoration:none;padding:7px;margin-top:6px;border:1px solid var(--line);border-radius:8px}
+  .short .dl:hover{color:var(--ember);border-color:var(--ember)}
+  .result-actions{display:flex;gap:12px;margin-top:10px}
+
+  /* advanced disclosure */
+  .advBtn{width:100%;text-align:left;background:none;border:none;color:var(--ember);font-family:var(--font);
+    font-size:13px;font-weight:640;letter-spacing:.02em;cursor:pointer;padding:2px 0;display:flex;align-items:center;gap:8px}
+  .advBtn .chev{transition:transform .3s var(--ease);display:inline-block}
+  .advBtn.open .chev{transform:rotate(90deg)}
+  .advBody{margin-top:18px;display:grid;gap:18px;grid-template-columns:1fr 1fr}
+  .advBody .full{grid-column:1/-1}
+  .num{display:flex;align-items:center;gap:10px}
+  .num input{width:64px;background:rgba(0,0,0,.32);border:1px solid var(--line);color:var(--ink);
+    border-radius:9px;padding:9px;font-size:14px;font-family:var(--font);text-align:center}
+  .num input:focus{outline:none;border-color:var(--ember)}
+
+  /* inbox strip */
+  .inbox{display:flex;align-items:center;gap:14px;border:1px solid rgba(255,106,43,.32);border-radius:15px;
+    padding:15px 18px;margin:0 0 18px;background:linear-gradient(120deg,rgba(52,26,12,.62),var(--glass));
+    cursor:pointer;transition:.2s var(--ease);animation:fade .5s var(--ease);width:100%;text-align:left;
+    color:var(--ink);font-family:var(--font);font-size:15px}
+  .inbox:hover{transform:translateY(-2px);box-shadow:0 22px 50px -24px rgba(255,106,43,.55)}
+  .inbox .ib-ic{width:34px;height:34px;border-radius:10px;background:rgba(255,106,43,.17);color:var(--ember);
+    display:grid;place-items:center;flex:none;font-size:15px}
+  .inbox .ib-t b{font-weight:640;font-size:14px;display:block}
+  .inbox .ib-t span{color:var(--muted);font-size:12px}
+  .inbox .ib-go{margin-left:auto;color:var(--ember);font-size:13px;font-weight:640}
+
+  /* stats strip + grade compare */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:11px;margin:2px 0 6px}
+  .stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:14px;text-align:center}
+  .stat b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--ink);line-height:1}
+  .stat b.gold{color:var(--ember)}
+  .stat span{display:block;color:var(--muted);font-size:11px;letter-spacing:.04em;margin-top:6px;text-transform:uppercase}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+  .compare figure{margin:0;position:relative;border-radius:11px;overflow:hidden;border:1px solid var(--line)}
+  .compare img{width:100%;display:block}
+  .compare figcaption{position:absolute;top:8px;left:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:#fff;background:rgba(0,0,0,.55);padding:4px 9px;border-radius:6px;font-weight:600;backdrop-filter:blur(4px)}
+  .compare figure.aft figcaption{background:rgba(255,106,43,.85);color:#1a1005}
+
+  .hidden{display:none!important}
+  .fade{animation:fade .5s var(--ease)}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media (max-width:760px){.homegrid{grid-template-columns:1fr}}
+  @media (max-width:660px){.modes,.row2,.opts{grid-template-columns:1fr}.wrap{padding:0 16px 90px}
+    .clip{grid-template-columns:1fr}.clip .thumb{aspect-ratio:16/7}
+    .jobrow .jbar{display:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#forge{display:none}}
+</style>
+</head>
+<body>
+<canvas id="forge" aria-hidden="true"></canvas><div class="grain" aria-hidden="true"></div>
+<div class="wrap">
+  <header>
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 5 13h5l-1 9 10-13h-6l1-7Z" fill="#1a0f06" stroke="#1a0f06" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+    <div class="brand"><b>AUTOEDITING FORGE</b><span>The automated editor</span></div>
+    <div class="grow"></div>
+    <button class="hbtn hidden" id="homeBtn">⌂ Home</button>
+    <div class="pill" aria-live="polite"><span class="dot" id="engineDot"></span><span id="engineTxt">lighting the forge…</span></div>
+    <button class="hbtn hidden" id="logoutBtn">Log out</button>
+  </header>
+  <button class="back hidden" id="backBtn">‹ Back</button>
+
+  <!-- LOGIN -->
+  <section id="login" class="hidden" aria-label="Log in">
+    <div class="login-stage">
+      <div class="card login-card">
+        <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 5 13h5l-1 9 10-13h-6l1-7Z" fill="#1a0f06" stroke="#1a0f06" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+        <h1>Unlock the forge.</h1>
+        <p class="lede">This AUTOEDITING FORGE is protected. Enter the studio password to continue.</p>
+        <form id="loginForm">
+          <label class="fld"><span class="lbl">Password</span>
+            <input type="password" id="loginPass" autocomplete="current-password" required aria-describedby="loginErr"></label>
+          <button class="build" id="loginBtn" type="submit">Enter the forge</button>
+          <div class="err" id="loginErr" role="alert"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME / DASHBOARD -->
+  <section id="home" class="hidden" aria-label="Dashboard">
+    <div class="hero" style="padding-bottom:2px">
+      <p class="kicker">Forge floor</p>
+      <h1 style="font-size:clamp(30px,5.4vw,46px)">Your forge, at a glance.</h1>
+      <p class="lede">AUTOEDITING FORGE watches for new footage, reviews it, and forges the finished episode
+        on its own. Everything below is live — start an edit and it takes it from there.</p>
+    </div>
+    <div class="cta">
+      <button class="build" id="newEditBtn">Start a new automated edit</button>
+    </div>
+    <button class="inbox hidden" id="inbox">
+      <span class="ib-ic" aria-hidden="true">↧</span>
+      <span class="ib-t"><b id="inboxTitle">New footage detected</b><span id="inboxSub"></span></span>
+      <span class="ib-go">Forge it →</span>
+    </button>
+    <div class="card">
+      <h2>System health</h2><p class="hint">Whether the forge and its helpers are ready to work.</p>
+      <div class="health" id="healthGrid" aria-live="polite"><div class="empty">Checking the forge…</div></div>
+      <p class="note" id="healthNote"></p>
+    </div>
+    <div class="homegrid">
+      <div class="card">
+        <h2>In the fire</h2><p class="hint">Edits being forged right now.</p>
+        <div class="jobs" id="activeJobs" aria-live="polite"><div class="empty">Checking…</div></div>
+      </div>
+      <div class="card">
+        <h2>Recent edits</h2><p class="hint">Open one to see the delivered episode or what went wrong.</p>
+        <div class="jobs" id="recentJobs"><div class="empty">Checking…</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Needs attention</h2><p class="hint">Warnings and errors the automation wants you to see.</p>
+      <div class="issues" id="issuesList"><div class="empty">Checking…</div></div>
+      <p class="note" id="jobsNote"></p>
+    </div>
+  </section>
+
+  <!-- MODE -->
+  <section id="mode" class="hidden">
+    <div class="hero">
+      <p class="kicker">Raw footage in · finished show out</p>
+      <h1>Feed it the tape. It forges the edit.</h1>
+      <p class="lede">Point AUTOEDITING FORGE at your recording. It cuts the ums and dead air, tightens the
+        pacing, pulls the strongest moments, adds titles and captions, and delivers the episode and the
+        shorts — your look and framing kept exactly as you shot it. Nothing to touch unless you want to.</p>
+    </div>
+    <div class="modes">
+      <div class="mode pri" data-mode="edit">
+        <span class="badge">◆ The core</span>
+        <h3>AUTOEDITING FORGE</h3>
+        <p>One recording, already shot and colored. It cuts the ums and dead air, tightens pacing,
+           adds titles and captions, and delivers the episode plus shorts — look and framing untouched.</p>
+        <div class="go-in">Point it at your footage →</div>
+      </div>
+      <div class="mode" data-mode="multicam">
+        <span class="badge">Podcast · multi-cam</span>
+        <h3>Podcast Multi-Cam</h3>
+        <p>Several cameras with audio in the footage. Video follows audio — cuts to whoever's
+           talking, widens on cross-talk, stays smooth.</p>
+        <div class="go-in">Start with a rig →</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="setup" class="hidden">
+    <div class="hero" style="padding-bottom:6px">
+      <p class="kicker" id="setupKicker">AUTOEDITING FORGE</p>
+      <h1 id="setupTitle" style="font-size:clamp(28px,5vw,40px)">Load the forge.</h1>
+    </div>
+
+    <div class="card">
+      <h2>Episode</h2><p class="hint">These become the opening title card.</p>
+      <div class="row2">
+        <label class="fld"><span class="lbl">Title</span><input type="text" id="title" placeholder="The Studio Show"></label>
+        <label class="fld"><span class="lbl">Subtitle</span><input type="text" id="subtitle" placeholder="Episode 12 — Guest Name"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Footage</h2>
+      <p class="hint" id="footHint">Browse to your clips and click a video to add it.</p>
+      <div class="browse"><label class="lbl" for="pathInput" style="position:absolute;left:-9999px">Folder path</label>
+        <input type="text" id="pathInput" placeholder="/Volumes/Studio Files"><button class="btn" id="openBtn">Open</button></div>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="listing" id="listing"><div class="empty">Choose a folder to begin.</div></div>
+      <div style="margin-top:16px"><h2 style="margin-bottom:10px" id="camsHdr">Camera</h2>
+        <div class="cams" id="cams"><div class="none-cams">Click a video above.</div></div></div>
+    </div>
+
+    <div class="card">
+      <h2>The edit</h2><p class="hint">Tight, punchy pacing — the way the best shows cut. Great defaults; adjust only if you want.</p>
+      <div class="opts">
+        <div class="tog on" data-opt="fillers"><div class="sw" aria-hidden="true"></div><div class="tt"><b>Remove filler words</b><span>um, uh, er…</span></div></div>
+        <div class="tog on" data-opt="pauses"><div class="sw" aria-hidden="true"></div><div class="tt"><b>Tighten pauses</b><span>close dead air</span></div></div>
+        <div class="tog on" data-opt="shorts"><div class="sw" aria-hidden="true"></div><div class="tt"><b>Make shorts</b><span>vertical, captioned</span></div></div>
+        <div class="tog on" data-opt="render"><div class="sw" aria-hidden="true"></div><div class="tt"><b>Export the video</b><span>off = build only</span></div></div>
+        <div class="tog on" id="vfaTog" data-opt="vfa"><div class="sw" aria-hidden="true"></div><div class="tt"><b>Video follows audio</b><span>cut to whoever's talking (camera audio)</span></div></div>
+      </div>
+      <div id="engineWrap" class="hidden" style="margin-top:16px">
+        <p class="seglbl" id="backendLbl">Engine</p>
+        <span class="seg" id="backendSeg" role="group" aria-labelledby="backendLbl"><button data-v="resolve" class="on" aria-pressed="true">DaVinci Resolve (BRAW)</button><button data-v="ffmpeg" aria-pressed="false">ffmpeg (ProRes / H.264)</button></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="advBtn" id="advBtn" aria-expanded="false"><span class="chev" aria-hidden="true">›</span> Advanced controls</button>
+      <div class="advBody hidden" id="advBody">
+        <div>
+          <p class="seglbl" id="modelLbl">Transcription accuracy</p>
+          <span class="seg" id="modelSeg" role="group" aria-labelledby="modelLbl">
+            <button data-v="base" class="on" aria-pressed="true">Fast</button>
+            <button data-v="small" aria-pressed="false">Balanced</button>
+            <button data-v="medium" aria-pressed="false">Best</button>
+          </span>
+        </div>
+        <div>
+          <p class="seglbl"><label for="shortsCount">Number of shorts</label></p>
+          <div class="num"><input type="number" id="shortsCount" value="5" min="0" max="20"><span style="color:var(--muted);font-size:13px">clips</span></div>
+        </div>
+        <div>
+          <p class="seglbl"><label for="pauseSec">Pause length to cut</label></p>
+          <div class="num"><input type="number" id="pauseSec" value="0.6" min="0.2" max="3" step="0.1"><span style="color:var(--muted);font-size:13px">sec+</span></div>
+        </div>
+        <div id="minShotWrap">
+          <p class="seglbl"><label for="minShotSec">Min shot length</label></p>
+          <div class="num"><input type="number" id="minShotSec" value="2.5" min="0.8" max="6" step="0.1"><span style="color:var(--muted);font-size:13px">sec · smoother = higher</span></div>
+        </div>
+        <div class="tog full" data-opt="silence"><div class="sw" aria-hidden="true"></div><div class="tt"><b>Remove long silences</b><span>drop dead air over 1.5s</span></div></div>
+      </div>
+    </div>
+
+    <div class="go">
+      <button class="build" id="reviewBtn">Review footage →</button>
+      <div class="ghostrow"><button class="ghost" id="skipBtn">Skip review — forge now</button></div>
+      <div class="err" id="err" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="review" class="hidden">
+    <div class="hero" style="padding-bottom:6px">
+      <p class="kicker">Footage review</p>
+      <h1 style="font-size:clamp(28px,5vw,42px)">Watch it before it edits.</h1>
+      <p class="lede">A fast, exact pass over every clip — which way it's facing, how loud it is, and what's on
+        screen — so nothing goes into the edit blind. Any fixes get queued automatically; you don't have to do a thing.</p>
+    </div>
+    <div class="revsum hidden" id="reviewSummary"></div>
+    <div class="revload hidden" id="reviewLoading">
+      <div class="rl-sp" aria-hidden="true"></div>
+      <div class="rl-t" aria-live="polite"><b id="rlTitle">Reviewing footage…</b><span id="rlSub">reading the first clip</span></div>
+      <div class="rl-bar" role="progressbar" aria-label="Review progress"><i id="rlBar" style="width:0%"></i></div>
+    </div>
+    <div class="revgrid" id="reviewGrid"></div>
+    <div class="go">
+      <button class="build" id="forgeBtn">Forge the edit</button>
+      <div class="ghostrow"><button class="ghost" id="reReviewBtn">Re-run review</button></div>
+      <div class="err" id="reviewErr" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- RUN -->
+  <section id="running" class="hidden">
+    <div class="hero" style="padding-bottom:4px"><p class="kicker" id="runKicker">Forging</p>
+      <h1 id="runTitle" style="font-size:clamp(26px,5vw,38px)">In the fire…</h1>
+      <p class="lede">Everything runs locally on this Mac. Leave it open — or head back home and it keeps forging.</p></div>
+    <div class="card">
+      <div class="steps" id="steps" aria-live="polite"></div>
+      <div id="liveMapWrap" class="hidden"><div class="shotmap" id="liveMap"></div></div>
+      <div class="console" id="console" aria-label="Pipeline log" tabindex="0"></div>
+    </div>
+    <div class="ghostrow"><button class="ghost" id="bgBtn">Let it run — back to home</button></div>
+  </section>
+
+  <!-- DONE -->
+  <section id="done" class="hidden">
+    <div class="hero" style="padding-bottom:4px"><p class="kicker" style="color:var(--good)">✓ Delivered</p>
+      <h1 id="doneTitle" style="font-size:clamp(26px,5vw,40px)">Ready.</h1>
+      <p class="lede" id="doneSub">Framed, smoothed, titled, and cut.</p></div>
+    <div class="card" id="statsCard"><h2>What the forge did</h2><p class="hint">Everything, automatically.</p>
+      <div class="stats" id="statsGrid"></div></div>
+    <div class="card" id="gradeCard"><h2>Color grade</h2><p class="hint">Auto-corrected from the raw footage.</p>
+      <div class="compare"><figure><img id="gradeBefore" alt="Frame before grading"><figcaption>Before</figcaption></figure>
+        <figure class="aft"><img id="gradeAfter" alt="Frame after grading"><figcaption>After · graded</figcaption></figure></div></div>
+    <div class="card" id="mapCard"><h2 id="mapHdr">The cut</h2><p class="hint" id="mapHint">Every trim the editor made — your framing kept.</p>
+      <div class="shotmap" id="doneMap"></div><div class="legend" id="legend"></div></div>
+    <div class="card" id="episodeCard"><h2>Episode</h2><video id="episodeVid" controls></video>
+      <div class="result-actions"><a class="btn" id="episodeDl" download>Download episode</a></div></div>
+    <div class="card" id="shortsCard"><h2>Shorts</h2><div class="shorts-grid" id="shortsGrid"></div></div>
+    <div class="go"><button class="build" id="againBtn">Forge another</button>
+      <div class="ghostrow"><button class="ghost" id="doneHomeBtn">Back to home</button></div></div>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const SHOT_COLORS={wide:"var(--w)",medium:"var(--m)",close:"var(--c)",punch:"var(--p)"};
+const state={mode:null,path:"",audios:[],cameras:[],intensity:"dynamic",backend:"resolve",
+  model:"base",shortsCount:5,pauseSec:0.6,minShotSec:2.5,
+  opts:{fillers:true,pauses:true,shorts:true,render:true,grade:false,face:false,silence:false,reframe:false,vfa:true},
+  job:null,poll:null,review:{id:null,poll:null,data:null},
+  screen:null,authRequired:false,homePoll:null,dashAvailable:false};
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* forge canvas — molten heat orbs + rising sparks */
+(function(){const c=$("#forge"),x=c.getContext("2d");let W,H,t=0,sparks=[];
+  const orbs=[[.2,.12,.95,"#6e2c0c"],[.82,.08,.7,"#8a3a10"],[.5,.62,1.05,"#40200c"],[.12,.72,.6,"#7a3410"]];
+  function rz(){W=c.width=innerWidth;H=c.height=innerHeight}rz();addEventListener("resize",rz);
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  for(let i=0;i<26;i++)sparks.push({x:Math.random(),y:Math.random(),v:.0004+Math.random()*.0011,r:.6+Math.random()*1.7,a:Math.random()});
+  (function loop(){t+=.0016;x.clearRect(0,0,W,H);
+    orbs.forEach((o,i)=>{const px=(o[0]+Math.sin(t+i)*.08)*W,py=(o[1]+Math.cos(t*1.2+i)*.08)*H,r=o[2]*Math.max(W,H)*.42;
+      const g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,o[3]);g.addColorStop(1,"transparent");
+      x.fillStyle=g;x.fillRect(0,0,W,H)});
+    sparks.forEach(s=>{s.y-=s.v;s.x+=Math.sin((t+s.a*9)*2)*.0004;if(s.y<-.02){s.y=1.03;s.x=Math.random()}
+      const px=s.x*W,py=s.y*H,fl=.55+Math.sin((t*40)+s.a*7)*.45;
+      x.beginPath();x.arc(px,py,s.r,0,6.283);x.fillStyle=`rgba(255,${140+fl*80|0},${60+fl*40|0},${.35*fl})`;x.fill()});
+    requestAnimationFrame(loop)})();
+})();
+
+/* fetch helper — parses JSON and bounces to login on 401 (session expiry, etc.) */
+function jfetch(url,opts){return fetch(url,opts).then(r=>{
+  if(r.status===401){state.authRequired=true;showLogin();const e=new Error("auth required");e.auth=true;throw e;}
+  return r.json();});}
+
+/* screens */
+const SCREENS=["login","home","mode","setup","review","running","done"];
+const BACK={mode:"home",setup:"mode",review:"setup"};
+function show(id){SCREENS.forEach(s=>$("#"+s).classList.add("hidden"));
+  state.screen=id;
+  if(id!=="home"&&state.homePoll){clearInterval(state.homePoll);state.homePoll=null;}
+  const el=$("#"+id);el.classList.remove("hidden");el.classList.remove("fade");void el.offsetWidth;el.classList.add("fade");
+  const b=$("#backBtn");b.dataset.to=BACK[id]||"";b.classList.toggle("hidden",!BACK[id]);
+  $("#homeBtn").classList.toggle("hidden",id==="home"||id==="login");
+  $("#logoutBtn").classList.toggle("hidden",!state.authRequired||id==="login");
+  window.scrollTo({top:0,behavior:"smooth"});
+  setTimeout(()=>{let f=id==="login"?$("#loginPass"):el.querySelector("h1");
+    if(f){if(f.tagName==="H1")f.setAttribute("tabindex","-1");try{f.focus({preventScroll:true})}catch(_){}}},80);}
+$("#backBtn").onclick=()=>{stopReview();const to=$("#backBtn").dataset.to||"home";to==="home"?enterHome():show(to);};
+$("#homeBtn").onclick=()=>{stopReview();enterHome();};
+
+/* ── AUTH ───────────────────────────────────────────────
+   GET /api/session → {auth_required, authenticated}; POST /api/login {password};
+   POST /api/logout. If the server doesn't offer these yet (404 / no JSON),
+   the forge simply opens straight onto the home screen. */
+function showLogin(){show("login");}
+function applyBrand(s){
+  if(!s||!s.brand) return;
+  const name=s.brand, tag=s.brand_tagline||"";
+  document.title=name+" — desktop editing control";
+  const b=document.querySelector(".brand b"), t=document.querySelector(".brand span");
+  if(b) b.textContent=name.toUpperCase();
+  if(t) t.textContent=tag;
+  state.brand=name;
+}
+async function boot(){
+  try{
+    const r=await fetch("/api/session",{headers:{Accept:"application/json"}});
+    if(r.status===401){state.authRequired=true;showLogin();return;}
+    if(r.ok){
+      const s=await r.json().catch(()=>null);
+      if(s) applyBrand(s);
+      if(s&&(s.auth_required||s.authentication_required)){state.authRequired=true;
+        if(!s.authenticated){showLogin();return;}}
+    }
+  }catch(_){/* no session endpoint — open forge */}
+  enterHome();
+}
+$("#loginForm").onsubmit=async e=>{e.preventDefault();
+  const btn=$("#loginBtn"),err=$("#loginErr");err.textContent="";
+  btn.disabled=true;btn.textContent="Checking…";
+  try{
+    const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({password:$("#loginPass").value})});
+    let d={};try{d=await r.json()}catch(_){}
+    if(r.ok&&!d.error&&d.authenticated!==false){$("#loginPass").value="";enterHome();}
+    else err.textContent=d.error||"That password didn't open the forge — try again.";
+  }catch(_){err.textContent="Couldn't reach the forge server.";}
+  btn.disabled=false;btn.textContent="Enter the forge";};
+$("#logoutBtn").onclick=()=>{
+  fetch("/api/logout",{method:"POST"}).catch(()=>{})
+    .finally(()=>{if(state.authRequired){$("#loginPass").value="";showLogin();}else enterHome();});};
+
+/* ── HOME / DASHBOARD ───────────────────────────────────
+   Prefers GET /api/dashboard → {health, jobs, issues}. When that endpoint
+   isn't there yet, it falls back to what the server can verify directly:
+   /api/home (reachability), /api/inbox (ingest), and the real status of
+   jobs this browser has started (remembered locally, polled via /api/job). */
+const JKEY="aef_recent_jobs";
+function loadStored(){try{return JSON.parse(localStorage.getItem(JKEY))||[]}catch(_){return[]}}
+function saveStored(a){try{localStorage.setItem(JKEY,JSON.stringify(a.slice(0,10)))}catch(_){}}
+function rememberJob(id,title){saveStored([{id,title,t:Date.now()},...loadStored().filter(j=>j.id!==id)]);}
+function forgetJob(id){saveStored(loadStored().filter(j=>j.id!==id));}
+
+function ago(t){if(t==null)return"";
+  let ms=typeof t==="number"?(t>1e12?t:t*1000):Date.parse(t);
+  if(!ms||isNaN(ms))return"";const s=(Date.now()-ms)/1000;
+  if(s<60)return"just now";if(s<3600)return Math.floor(s/60)+"m ago";
+  if(s<86400)return Math.floor(s/3600)+"h ago";return Math.floor(s/86400)+"d ago";}
+function stagePct(line){if(!line)return null;
+  if(/shorts/i.test(line))return 95;
+  const m=line.match(/\[(\d)\/6\]/);return m?Math.round(parseInt(m[1])/6*90):null;}
+function prettyState(s){return {running:"Forging…",queued:"Queued",done:"Delivered",error:"Stopped with an error"}[s]||s||"";}
+
+function enterHome(){show("home");refreshHome();
+  if(state.homePoll)clearInterval(state.homePoll);
+  state.homePoll=setInterval(refreshHome,7000);}
+$("#newEditBtn").onclick=()=>show("mode");
+
+let homeBusy=false;
+async function refreshHome(){
+  if(homeBusy||state.screen!=="home")return;homeBusy=true;
+  let serverOk=false;
+  try{const d=await jfetch("/api/home");serverOk=true;
+    $("#engineDot").classList.add("on");$("#engineTxt").textContent="forge ready";
+    if(!state.path&&d.roots?.length){state.path=d.roots[0].path;$("#pathInput").value=state.path;}
+  }catch(e){if(e&&e.auth){homeBusy=false;return;}
+    $("#engineDot").classList.remove("on");$("#engineTxt").textContent="forge offline";}
+  let inbox=null;
+  try{inbox=await jfetch("/api/inbox");}catch(e){if(e&&e.auth){homeBusy=false;return;}}
+  renderInbox(inbox);
+  let dash=null;
+  try{const r=await fetch("/api/dashboard",{headers:{Accept:"application/json"}});
+    if(r.status===401){state.authRequired=true;showLogin();homeBusy=false;return;}
+    if(r.ok)dash=await r.json().catch(()=>null);
+  }catch(_){}
+  state.dashAvailable=!!dash;
+  renderHealth(dash,serverOk,inbox);
+  let jobs;
+  if(dash&&Array.isArray(dash.jobs))jobs=dash.jobs.map(normJob);
+  else if(dash&&dash.jobs&&Array.isArray(dash.jobs.recent)){
+    const seen=new Set();jobs=[];
+    [].concat(dash.jobs.active||[],dash.jobs.recent).forEach(j=>{
+      const n=normJob(j);if(n.id&&seen.has(n.id))return;seen.add(n.id);jobs.push(n);});}
+  else jobs=await fallbackJobs();
+  const reviews=(dash&&dash.reviews&&Array.isArray(dash.reviews.active))?dash.reviews.active:[];
+  renderJobs(jobs,reviews);
+  renderIssues(dash,inbox);
+  homeBusy=false;}
+
+function renderInbox(d){
+  const el=$("#inbox");
+  if(!(d&&d.sessions&&d.sessions.length)){el.classList.add("hidden");return;}
+  const s=d.sessions[0],n=(s.files||[]).length;
+  el.classList.remove("hidden");
+  $("#inboxTitle").textContent="New footage ready — "+s.name;
+  $("#inboxSub").textContent=n+" clip"+(n===1?"":"s")+(s.engine?" · "+s.engine:"");
+  el.onclick=()=>{state.path=s.path;show("mode");document.querySelector('.mode[data-mode="edit"]').click();};}
+
+function pickOk(v){if(typeof v!=="object"||v==null)return null;
+  const s=String(v.state||v.status||"").toLowerCase();
+  if(s)return ["ok","online","ready","up","good","healthy","running"].includes(s)?true
+    :["warning","degraded","stopped"].includes(s)&&v.optional?null
+    :["critical","error","unavailable","down","bad","warning","degraded","stopped"].includes(s)?false:null;
+  if(typeof v.ok==="boolean")return v.ok;
+  if(typeof v.available==="boolean")return v.available;
+  return null;}
+const GB=n=>(n/1024/1024/1024).toFixed(1)+" GB";
+const H_NAMES={ffmpeg:"ffmpeg",ollama:"Ollama vision",python:"Python",resolve:"DaVinci Resolve",disk:"Disk space"};
+function healthDetail(k,v){
+  if(k==="disk"&&v.free_bytes!=null)return GB(v.free_bytes)+" free ("+(v.free_percent!=null?v.free_percent+"%":"")+")";
+  if(k==="resolve")return v.running?"open · ready for BRAW":v.installed?"installed, not open — needed for BRAW":"not installed";
+  if(k==="ollama")return v.model?(v.model+(v.model_ready?" ready":" loading")):(v.detail||v.status||"");
+  return v.version||v.detail||v.message||v.status||v.state||"";}
+function healthEntries(h){
+  if(!h)return[];
+  if(Array.isArray(h))return h.map(x=>typeof x==="string"?{name:x,ok:null,detail:""}
+    :{name:x.name||x.component||"component",ok:pickOk(x),detail:x.detail||x.message||x.status||x.state||""});
+  if(typeof h==="object")return Object.entries(h)
+    .filter(([k,v])=>typeof v==="object"&&v!=null&&!Array.isArray(v))
+    .map(([k,v])=>({name:H_NAMES[k]||k,ok:pickOk(v),detail:healthDetail(k,v)}));
+  return[];}
+function renderHealth(dash,serverOk,inbox){
+  let entries=dash?healthEntries(dash.health):[];
+  if(!entries.length){
+    entries=[{name:"Forge server",ok:serverOk,detail:serverOk?"online · 127.0.0.1":"not responding"}];
+    if(inbox){const n=(inbox.sessions||[]).length;
+      const errLine=(inbox.log||[]).slice().reverse().find(l=>/error/i.test(String(l)));
+      entries.push({name:"Auto-ingest",ok:!errLine,
+        detail:errLine?String(errLine):(n?n+" session"+(n===1?"":"s")+" waiting in the inbox":"watching for new footage")});}
+  }
+  $("#healthGrid").innerHTML=entries.map(e=>{
+    const cls=e.ok===true?"ok":e.ok===false?"bad":"";
+    const detail=e.detail||(e.ok===true?"healthy":e.ok===false?"needs attention":"");
+    return `<div class="hpill ${cls}"><span class="hdot" aria-hidden="true"></span>
+      <div class="ht"><b>${esc(e.name)}</b><span>${esc(detail)}</span></div></div>`;}).join("")
+    ||`<div class="empty">Nothing to report.</div>`;
+  const overall=dash&&dash.health?String(dash.health.status||"").toLowerCase():"";
+  if(overall==="critical"||overall==="degraded"){
+    $("#engineTxt").textContent=overall==="critical"?"forge needs attention":"forge degraded";
+    $("#engineDot").classList.remove("on");}
+  $("#healthNote").textContent=dash?""
+    :"This server doesn't publish a live health feed yet — showing what the forge can verify directly.";}
+
+function normJob(j){
+  let prog=null;
+  if(typeof j.progress==="number")prog=j.progress;
+  else if(j.progress&&typeof j.progress.percent==="number")prog=j.progress.percent;
+  return{
+    id:j.id||j.job||"",title:j.title||j.name||"Untitled edit",
+    state:String(j.state||j.status||"").toLowerCase()||"running",
+    stage:j.stage_line||j.stage||"",
+    progress:prog,
+    t:j.updated_at||j.completed_at||j.created_at||j.updated||j.started||j.time||j.t||null};}
+async function fallbackJobs(){
+  const out=[];
+  await Promise.all(loadStored().map(async s=>{
+    try{const r=await fetch("/api/job/"+encodeURIComponent(s.id));
+      if(r.status===404){forgetJob(s.id);return;}
+      if(!r.ok)return;
+      const d=await r.json();
+      out.push({id:s.id,title:d.title||s.title,state:d.state,stage:d.stage_line||"",progress:null,t:s.t});
+    }catch(_){}}));
+  out.sort((a,b)=>(b.t||0)-(a.t||0));return out;}
+function jobRow(j){
+  let pct=j.progress!=null?Math.round(j.progress<=1?j.progress*100:j.progress):stagePct(j.stage);
+  if(pct!=null)pct=Math.max(2,Math.min(100,pct));
+  const sub=[j.stage||prettyState(j.state),ago(j.t)].filter(Boolean).join(" · ");
+  return `<button class="jobrow ${esc(j.state)}" ${j.id?`data-id="${esc(j.id)}" data-title="${esc(j.title)}"`:"disabled"}
+      aria-label="${esc(j.title)} — ${esc(prettyState(j.state))}">
+    <span class="jdot" aria-hidden="true"></span>
+    <span class="jt"><b>${esc(j.title)}</b><span>${esc(sub)}</span></span>
+    ${(j.state==="running"&&pct!=null)?`<span class="jbar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></span>`:""}
+    ${j.id?`<span class="jgo">Open →</span>`:""}
+  </button>`;}
+function reviewRow(r){
+  const pct=Math.max(2,Math.min(100,r.progress||0));
+  const sub=[r.current?"reviewing "+r.current:"footage review",r.total?r.reviewed+" of "+r.total+" clips":""].filter(Boolean).join(" · ");
+  return `<div class="jobrow running" aria-label="Footage review in progress">
+    <span class="jdot" aria-hidden="true"></span>
+    <span class="jt"><b>Footage review</b><span>${esc(sub)}</span></span>
+    <span class="jbar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></span>
+  </div>`;}
+function renderJobs(jobs,reviews){
+  const active=jobs.filter(j=>j.state==="running"||j.state==="queued");
+  const recent=jobs.filter(j=>!(j.state==="running"||j.state==="queued"));
+  const activeHtml=active.map(jobRow).join("")+(reviews||[]).map(reviewRow).join("");
+  $("#activeJobs").innerHTML=activeHtml
+    ||`<div class="empty">Nothing forging right now.</div>`;
+  $("#recentJobs").innerHTML=recent.length?recent.slice(0,6).map(jobRow).join("")
+    :`<div class="empty">No finished edits yet — start one above and it lands here.</div>`;
+  $("#jobsNote").textContent=state.dashAvailable?""
+    :"Edit history comes from this browser's own runs until the server publishes a dashboard feed.";
+  $$("#activeJobs .jobrow[data-id], #recentJobs .jobrow[data-id]").forEach(b=>
+    b.onclick=()=>openJob(b.dataset.id,b.dataset.title));}
+function openJob(id,title){state.job=id;startRun(title||"Episode");}
+
+function normIssues(list){return(list||[]).map(i=>typeof i==="string"?{level:"warn",message:i,time:null}
+  :{level:String(i.level||i.severity||"warn").toLowerCase(),
+    message:(i.source?"["+i.source+"] ":"")+(i.message||i.text||i.detail||""),
+    time:i.timestamp||i.time||i.updated||i.t||null})
+  .filter(i=>i.message);}
+function renderIssues(dash,inbox){
+  let issues=dash?normIssues(dash.issues):[];
+  if(!dash&&inbox)(inbox.log||[]).filter(l=>/error/i.test(String(l))).slice(-3)
+    .forEach(l=>issues.push({level:"warn",message:String(l),time:null}));
+  $("#issuesList").innerHTML=issues.length?issues.slice(0,8).map(i=>
+    `<div class="issue ${i.level==="error"?"error":""}">
+      <span class="ik" aria-hidden="true">${i.level==="error"?"✕":"⚑"}</span>
+      <span class="im">${esc(i.message)}</span>${i.time?`<time>${esc(ago(i.time))}</time>`:""}</div>`).join("")
+    :`<div class="empty">All clear — nothing needs your attention.</div>`;}
+
+/* ── MODE (new-edit chooser) ────────────────────────── */
+$$(".mode").forEach(m=>{
+  m.setAttribute("role","button");m.setAttribute("tabindex","0");
+  const go=()=>{state.mode=m.dataset.mode;state.cameras=[];renderCameras();
+    const edit=state.mode==="edit";
+    $("#setupKicker").textContent=edit?"AUTOEDITING FORGE":"Podcast multi-cam";
+    $("#camsHdr").textContent=edit?"Your footage":"Cameras";
+    $("#footHint").textContent=edit?"Point it at your clip — it cuts and paces from the footage's own audio. Your look, untouched."
+      :"Add each camera. With Video follows audio on, it listens to each camera's embedded sound — no separate mic files needed.";
+    $("#engineWrap").classList.remove("hidden");   // both modes pick the engine
+    $("#vfaTog").classList.toggle("hidden", edit);
+    $("#minShotWrap").classList.toggle("hidden", edit);
+    if(!edit){state.opts.vfa=true;$("#vfaTog").classList.add("on");
+      $("#vfaTog").setAttribute("aria-checked","true");}
+    if(state.path){$("#pathInput").value=state.path;openPath(state.path);}
+    show("setup");};
+  m.onclick=go;
+  m.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});
+
+/* advanced controls */
+$("#advBtn").onclick=()=>{const open=$("#advBtn").classList.toggle("open");
+  $("#advBody").classList.toggle("hidden");$("#advBtn").setAttribute("aria-expanded",open?"true":"false");};
+function segWire(segId,onPick){$(segId).querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  $(segId).querySelectorAll("button").forEach(x=>{x.classList.remove("on");x.setAttribute("aria-pressed","false");});
+  b.classList.add("on");b.setAttribute("aria-pressed","true");onPick(b.dataset.v);});}
+segWire("#modelSeg",v=>state.model=v);
+segWire("#backendSeg",v=>state.backend=v);
+$("#shortsCount").oninput=e=>state.shortsCount=Math.max(0,parseInt(e.target.value)||0);
+$("#pauseSec").oninput=e=>state.pauseSec=parseFloat(e.target.value)||0.6;
+$("#minShotSec").oninput=e=>state.minShotSec=Math.max(0.5,parseFloat(e.target.value)||2.5);
+
+/* browse */
+$("#openBtn").onclick=()=>openPath($("#pathInput").value.trim());
+$("#pathInput").addEventListener("keydown",e=>{if(e.key==="Enter")openPath($("#pathInput").value.trim())});
+function openPath(p){if(!p)return;jfetch("/api/scan?dir="+encodeURIComponent(p)).then(d=>{
+  if(d.error){$("#listing").innerHTML=`<div class="empty">${esc(d.error)}</div>`;return;}
+  state.path=d.dir;$("#pathInput").value=d.dir;
+  d.audios.forEach(a=>{if(!state.audios.find(x=>x.path===a.path))state.audios.push(a)});
+  renderCrumbs(d.dir);renderListing(d);renderCameras();}).catch(()=>{});}
+function renderCrumbs(dir){const parts=dir.split("/").filter(Boolean);let acc="";const c=$("#crumbs");c.innerHTML="";
+  const r=document.createElement("button");r.textContent="/";r.onclick=()=>openPath("/");c.appendChild(r);
+  parts.forEach(p=>{acc+="/"+p;const path=acc;c.appendChild(document.createTextNode("›"));
+    const b=document.createElement("button");b.textContent=p;b.onclick=()=>openPath(path);c.appendChild(b)});}
+function renderListing(d){const L=$("#listing");L.innerHTML="";
+  const add=(n,ic,cls,fn,tag)=>{const e=document.createElement("div");e.className="item "+cls;
+    e.setAttribute("role","button");e.setAttribute("tabindex","0");
+    e.innerHTML=`<span class="ic">${ic}</span><span class="nm">${esc(n)}</span><span class="add">${tag||""}</span>`;
+    e.onclick=fn;e.onkeydown=ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();fn();}};L.appendChild(e)};
+  d.dirs.forEach(f=>add(f.name,"▸","dir",()=>openPath(f.path)));
+  d.videos.forEach(f=>add(f.name,"●","vid",()=>addCamera(f),"+ add"));
+  d.audios.forEach(f=>add(f.name,"♪","aud",()=>{},"mic"));
+  if(!d.dirs.length&&!d.videos.length&&!d.audios.length)L.innerHTML=`<div class="empty">Nothing here.</div>`;}
+
+function baseName(p){return p.split("/").pop().replace(/\.[^.]+$/,"")}
+function addCamera(v){
+  if(state.mode==="edit"){state.cameras=[{name:"main",video:v.path,vname:v.name,mic:"",wide:false}];renderCameras();return;}
+  if(state.cameras.find(c=>c.video===v.path))return;
+  let name="cam"+(state.cameras.length+1);const low=v.name.toLowerCase();
+  ["host","guest","cohost","wide"].forEach(k=>{if(low.includes(k))name=k});
+  let mic="";const stem=baseName(v.path).toLowerCase(),key=name.toLowerCase();
+  if(name!=="wide"){const tok=new RegExp("(^|[^a-z])"+key+"([^a-z]|$)","i");
+    const m=state.audios.find(a=>tok.test(a.name.toLowerCase()))||state.audios.find(a=>stem&&a.name.toLowerCase().includes(stem));if(m)mic=m.path;}
+  state.cameras.push({name,video:v.path,vname:v.name,mic,wide:name==="wide"});renderCameras();}
+function renderCameras(){const C=$("#cams");if(!state.cameras.length){C.innerHTML=`<div class="none-cams">Click a video above.</div>`;return;}
+  C.innerHTML="";state.cameras.forEach((cam,i)=>{const el=document.createElement("div");el.className="cam";
+    const multicam=state.mode==="multicam";
+    const showMic=multicam&&!state.opts.vfa;
+    const vfaHint=multicam&&state.opts.vfa
+      ?`<span class="vf" style="opacity:.75">${cam.wide?"picture only":"♪ camera audio"}</span>`:"";
+    const opts=['<option value="">— no mic —</option>'].concat(state.audios.map(a=>`<option value="${esc(a.path)}" ${a.path===cam.mic?"selected":""}>${esc(a.name)}</option>`)).join("");
+    el.innerHTML=`<div class="ci" aria-hidden="true">●</div><input class="cname" value="${esc(cam.name)}" aria-label="Camera name">
+      <span class="vf">${esc(cam.vname)}</span>${vfaHint}
+      ${showMic?`<select aria-label="Mic for ${esc(cam.name)}">${opts}</select>`:""}
+      ${multicam?`<span class="wide-tag ${cam.wide?"on":""}" role="button" tabindex="0">wide</span>`:""}
+      <button class="x" aria-label="Remove ${esc(cam.name)}">×</button>`;
+    el.querySelector(".cname").oninput=e=>cam.name=e.target.value;
+    if(showMic){el.querySelector("select").onchange=e=>cam.mic=e.target.value;}
+    if(multicam){const wt=el.querySelector(".wide-tag");
+      const flipWide=()=>{cam.wide=!cam.wide;wt.classList.toggle("on",cam.wide);renderCameras();};
+      wt.onclick=flipWide;wt.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();flipWide();}};}
+    el.querySelector(".x").onclick=()=>{state.cameras.splice(i,1);renderCameras()};C.appendChild(el)});}
+
+$$(".tog").forEach(t=>{
+  t.setAttribute("role","switch");t.setAttribute("tabindex","0");
+  const sync=()=>t.setAttribute("aria-checked",t.classList.contains("on")?"true":"false");sync();
+  const flip=()=>{const k=t.dataset.opt;state.opts[k]=!state.opts[k];t.classList.toggle("on",state.opts[k]);sync();
+    if(k==="vfa")renderCameras();};
+  t.onclick=flip;
+  t.onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();flip();}};});
+
+/* validation + cfg shared by review → forge and skip → forge */
+function ready(errEl){errEl.textContent="";
+  if(!state.cameras.length){errEl.textContent=state.mode==="multicam"?"Add a camera first.":"Pick your footage above first — click a video to add it.";return false;}
+  return true;}
+function buildCfg(){const wide=state.cameras.find(c=>c.wide);
+  const vfa=state.mode==="edit"?true:!!state.opts.vfa;
+  return {mode:state.mode,title:$("#title").value.trim(),subtitle:$("#subtitle").value.trim(),
+    angles:state.cameras.map(c=>({name:c.name,video:c.video,
+      mic:(vfa&&!c.wide)?null:(c.mic||null)})),wide:wide?wide.name:null,
+    video_follows_audio:vfa,
+    min_shot_sec:state.mode==="multicam"?state.minShotSec:1.5,
+    remove_fillers:state.opts.fillers,remove_pauses:state.opts.pauses,silence:state.opts.silence,
+    shorts:state.opts.shorts,render:state.opts.render,backend:state.backend,grade:false,
+    model:state.model,shorts_count:state.shortsCount,pause_sec:state.pauseSec,
+    project_name:"AUTOEDITING FORGE"};}
+
+/* ── REVIEW ─────────────────────────────────────────── */
+$("#reviewBtn").onclick=()=>{if(!ready($("#err")))return;show("review");startReview();};
+$("#skipBtn").onclick=()=>{if(!ready($("#err")))return;runForge();};
+$("#reReviewBtn").onclick=()=>startReview();
+$("#forgeBtn").onclick=()=>{stopReview();runForge();};
+
+function stopReview(){if(state.review.poll){clearInterval(state.review.poll);state.review.poll=null;}}
+function startReview(){stopReview();
+  const paths=state.cameras.map(c=>c.video);
+  $("#reviewErr").textContent="";$("#reviewSummary").classList.add("hidden");
+  $("#reviewLoading").classList.remove("hidden");
+  $("#rlTitle").textContent="Reviewing footage…";$("#rlSub").textContent="reading the first clip";
+  $("#rlBar").style.width="6%";
+  renderSkeletons(paths.length);
+  jfetch("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paths})})
+    .then(d=>{
+      if(d.error){$("#reviewLoading").classList.add("hidden");$("#reviewErr").textContent=d.error;return;}
+      state.review.id=d.review;state.review.poll=setInterval(pollReview,1100);pollReview();
+    }).catch(e=>{if(e&&e.auth)return;
+      $("#reviewLoading").classList.add("hidden");$("#reviewErr").textContent="Couldn't start the review.";});}
+
+function pollReview(){if(!state.review.id)return;
+  jfetch("/api/review/"+state.review.id).then(d=>{
+    if(d.error&&d.state!=="error"){stopReview();$("#reviewLoading").classList.add("hidden");$("#reviewErr").textContent=d.error;return;}
+    const total=d.total||state.cameras.length,done=d.reviewed||0;
+    $("#rlBar").style.width=Math.max(6,Math.round((done/Math.max(1,total))*100))+"%";
+    if(d.current)$("#rlSub").textContent="reviewing "+d.current+"  ·  "+done+" of "+total+" done";
+    if(d.state==="done"){stopReview();state.review.data=d;$("#reviewLoading").classList.add("hidden");renderReview(d);}
+    else if(d.state==="error"){stopReview();$("#reviewLoading").classList.add("hidden");$("#reviewErr").textContent=d.error||"Review stopped.";}
+  }).catch(()=>{});}
+
+function renderSkeletons(n){const G=$("#reviewGrid");G.innerHTML="";
+  for(let i=0;i<Math.max(1,n);i++){const c=document.createElement("div");c.className="clip";
+    c.innerHTML=`<div class="thumb"><div class="ph">◵</div></div>
+      <div class="body"><div class="ctop"><div class="cname" style="color:var(--faint)">reading clip…</div></div>
+      <div class="chips"><span class="chip">analysing</span><span class="chip">·</span></div></div>`;G.appendChild(c);}}
+
+function renderReview(d){
+  const S=$("#reviewSummary");S.classList.remove("hidden");
+  const flagged=d.total-d.usable, allgood=(d.clips||[]).every(c=>c.usable&&(!c.flags||!c.flags.length));
+  S.innerHTML=`<div><div class="rs-n">${d.total} clip${d.total===1?"":"s"} reviewed</div>
+      <div class="rs-sub">${d.usable} usable · ${d.fixes} fix${d.fixes===1?"":"es"} queued${flagged>0?` · ${flagged} flagged`:""}</div></div>
+    <div class="rs-grow"></div>
+    <span class="verdict ${allgood?"ok":"warn"}">${allgood?"✓ Clean — good to forge":"⚑ Fixes queued — safe to forge"}</span>`;
+  const G=$("#reviewGrid");G.innerHTML="";
+  (d.clips||[]).forEach(c=>G.appendChild(clipCard(c)));
+  $("#forgeBtn").textContent="Forge the edit";}
+
+function clipCard(c){
+  const el=document.createElement("div");
+  const flagged=c.flags&&c.flags.length;
+  el.className="clip"+(!c.usable?" bad":flagged?" flagged":"");
+  const rot=(c.orientation&&[90,180,270].includes(c.orientation))?c.orientation:0;
+  const t=(Math.max(0.5,(c.duration||2)*0.35)).toFixed(1);
+  const thumbUrl="/api/thumb?path="+encodeURIComponent(c.path)+"&rot="+rot+"&t="+t;
+  const spec=[(c.width&&c.height)?c.width+"×"+c.height:"",c.duration!=null?c.duration+"s":"",c.fps?c.fps+"fps":""].filter(Boolean).join(" · ");
+
+  // orientation chip
+  const oOk=!rot;
+  const oChip=`<span class="chip ${oOk?"ok":"hot"}"><span class="cd" style="background:${oOk?"var(--good)":"var(--ember)"}"></span>${oOk?"✓ Upright":"⟳ Will rotate "+rot+"°"}</span>`;
+  // audio chip
+  const av=c.audio_verdict||"good";
+  const aMap={good:["ok","var(--good)","Audio good"],quiet:["warn","var(--quiet)","Quiet"],loud:["hot","var(--loud)","Loud"],silent:["bad","var(--silent)","Silent"]};
+  const am=aMap[av]||aMap.good;
+  const lufs=(c.loudness_lufs!=null)?c.loudness_lufs.toFixed(1)+" LUFS":(c.has_audio?"—":"no audio");
+  const aChip=`<span class="chip ${am[0]}"><span class="cd" style="background:${am[1]}"></span>${am[2]} · ${lufs}</span>`;
+  // content chip
+  const cMap={talking:"🗣 Talking head",broll:"🎞 B-roll",unusable:"⚠ Unusable"};
+  const cChip=`<span class="chip">${cMap[c.content]||c.content||"clip"}</span>`;
+  // usable chip
+  const uChip=`<span class="chip ${c.usable?"ok":"bad"}">${c.usable?"✓ Usable":"✕ Needs a look"}</span>`;
+
+  const recs=(c.recommendations||[]);
+  const recsHtml=recs.length?recs.map(r=>{const clean=/clean at/i.test(r);
+      return `<li class="${clean?"clean":""}"><span class="rk">${clean?"✓":"⚒"}</span><span>${esc(r)}</span></li>`;}).join("")
+    :`<li class="clean"><span class="rk">✓</span><span>Ready as-is — no fixes needed.</span></li>`;
+
+  el.innerHTML=`
+    <div class="thumb"><div class="ph">◵</div>
+      <img alt="" loading="lazy" onload="this.previousElementSibling.style.display='none'" onerror="this.remove()" src="${thumbUrl}">
+      ${rot?`<span class="rotpin">↻ ${rot}°</span>`:""}</div>
+    <div class="body">
+      <div class="ctop"><div class="cname">${esc(c.name)}</div><div class="cspec">${esc(spec)}</div></div>
+      <div class="chips">${oChip}${aChip}${cChip}${uChip}</div>
+      <ul class="recs">${recsHtml}</ul>
+    </div>`;
+  return el;}
+
+/* ── FORGE (run) ─────────────────────────────────────── */
+function runForge(){const cfg=buildCfg();
+  jfetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cfg)})
+    .then(d=>{if(d.error){show("setup");$("#err").textContent=d.error;return;}
+      state.job=d.job;rememberJob(d.job,cfg.title||"Episode");startRun(cfg.title||"Episode");})
+    .catch(e=>{if(e&&e.auth)return;show("setup");$("#err").textContent="Couldn't start the forge.";});}
+
+const STAGES=[["Sync","1/6"],["Listen","2/6"],["Mix audio","3/6"],["Transcribe & smooth","4/6"],["Titles","5/6"],["Forge the cut","6/6"],["Shorts","shorts"]];
+function startRun(titleText){show("running");
+  $("#runKicker").textContent="AUTOEDITING FORGE";
+  $("#runTitle").textContent="Forging “"+(titleText||"Episode")+"”…";
+  const S=$("#steps");S.innerHTML="";
+  STAGES.forEach((s,i)=>{const el=document.createElement("div");el.className="step";el.id="st"+i;
+    const lbl=typeof s[0]==="function"?s[0](state):s[0];el.innerHTML=`<span class="mk">${i+1}</span><b>${lbl}</b>`;S.appendChild(el)});
+  if(state.poll)clearInterval(state.poll);
+  state.poll=setInterval(poll,800);poll();}
+$("#bgBtn").onclick=()=>{if(state.poll){clearInterval(state.poll);state.poll=null;}enterHome();};
+function stageIndex(l){if(!l)return-1;if(l.toLowerCase().includes("operator")||l.toLowerCase().includes("assembl"))return 5;
+  if(l.toLowerCase().includes("shorts"))return 6;const m=l.match(/\[(\d)\/6\]/);return m?parseInt(m[1])-1:-1;}
+function drawMap(el,shots,live){if(!shots||!shots.length){return;}const total=shots[shots.length-1].end-shots[0].start||1;
+  el.innerHTML="";shots.forEach(s=>{const d=document.createElement("div");d.className="seg-s";
+    const kind=s.shot||s.angle;d.style.flex=(s.end-s.start);d.style.background=SHOT_COLORS[s.shot]||"var(--m)";
+    if(s.angle)d.style.background=`hsl(${(hashN(s.angle)*67)%360} 55% 48%)`;
+    d.innerHTML=`<span>${esc(kind)}</span>`;el.appendChild(d)});}
+function hashN(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)}
+function poll(){jfetch("/api/job/"+state.job).then(d=>{
+  if(d.error){clearInterval(state.poll);state.poll=null;
+    $("#runTitle").textContent="That edit can't be found.";
+    $("#console").innerHTML=`<span style="color:var(--bad)">${esc(d.error)} — the server may have restarted since it ran.</span>`;
+    if(state.job)forgetJob(state.job);return;}
+  const idx=stageIndex(d.stage_line);
+  STAGES.forEach((s,i)=>{const el=$("#st"+i);if(!el)return;el.className="step"+(i<idx?" done":i===idx?" active":"");
+    const mk=el.querySelector(".mk");if(i<idx)mk.textContent="✓";else if(i===idx)mk.innerHTML='<span class="sp"></span>';else mk.textContent=i+1;});
+  if(d.shotmap&&d.shotmap.length){$("#liveMapWrap").classList.remove("hidden");drawMap($("#liveMap"),d.shotmap,true);}
+  const c=$("#console");c.innerHTML=d.log.slice(-40).map(l=>esc(l).replace(/(\[\d\/6\]|Making shorts…|Done\.|operated shots)/,'<span class="k">$1</span>')).join("\n");c.scrollTop=c.scrollHeight;
+  if(d.state==="done"){clearInterval(state.poll);state.poll=null;
+    STAGES.forEach((s,i)=>{const el=$("#st"+i);el.className="step done";el.querySelector(".mk").textContent="✓";});showDone(d);}
+  else if(d.state==="error"){clearInterval(state.poll);state.poll=null;
+    $("#runTitle").textContent="That didn't finish.";$("#console").innerHTML=`<span style="color:var(--bad)">${esc(d.log.slice(-6).join("\n"))||"Forge stopped."}</span>`;}
+}).catch(()=>{});}
+function showDone(d){show("done");$("#doneTitle").textContent="“"+(d.title||"Episode")+"” is ready.";
+  const op=false;   // editor keeps framing; the "cut map" shows where it tightened
+  const s=d.stats||{},chips=[];
+  if(s.shots!=null)chips.push([s.shots,"shots framed",true]);
+  else if(s.cuts!=null)chips.push([s.cuts,"camera cuts",true]);
+  if(s.seconds_cut!=null)chips.push([Math.round(s.seconds_cut)+"s","trimmed out"]);
+  if(s.trim_spots!=null)chips.push([s.trim_spots,"fillers cut"]);
+  if(s.words!=null)chips.push([s.words,"words heard"]);
+  /* grade / face-lock chips intentionally omitted — golden rule */
+  const SG=$("#statsGrid");
+  if(chips.length){$("#statsCard").classList.remove("hidden");
+    SG.innerHTML=chips.map(c=>`<div class="stat"><b class="${c[2]?"gold":""}">${c[0]}</b><span>${c[1]}</span></div>`).join("");}
+  else $("#statsCard").classList.add("hidden");
+  $("#gradeCard").classList.add("hidden");
+  $("#mapHdr").textContent="The cut";
+  $("#mapHint").textContent="Every trim the editor made — your framing kept.";
+  if(d.shotmap&&d.shotmap.length){$("#mapCard").classList.remove("hidden");drawMap($("#doneMap"),d.shotmap);
+    const kinds=[...new Set(d.shotmap.map(s=>s.shot||s.angle))];
+    $("#legend").innerHTML=kinds.map(k=>`<span><i style="background:${SHOT_COLORS[k]||`hsl(${(hashN(k)*67)%360} 55% 48%)`}"></i>${esc(k)}</span>`).join("");}
+  else $("#mapCard").classList.add("hidden");
+  const ep=d.outputs.episode;
+  if(ep){const u="/api/media?path="+encodeURIComponent(ep);$("#episodeVid").src=u;$("#episodeDl").href=u;$("#episodeCard").classList.remove("hidden");}
+  else{$("#episodeCard").classList.add("hidden");$("#doneSub").textContent="Timeline built in Resolve — turn on “Export the video” to render a file.";}
+  const g=$("#shortsGrid");g.innerHTML="";
+  if(d.outputs.shorts?.length){$("#shortsCard").classList.remove("hidden");
+    d.outputs.shorts.forEach((s,i)=>{const u="/api/media?path="+encodeURIComponent(s);const e=document.createElement("div");e.className="short";
+      e.innerHTML=`<video src="${u}" controls muted></video><a class="dl" href="${u}" download>Short ${i+1}</a>`;g.appendChild(e)});}
+  else $("#shortsCard").classList.add("hidden");}
+$("#againBtn").onclick=()=>{stopReview();show("mode");};
+$("#doneHomeBtn").onclick=()=>{stopReview();enterHome();};
+
+boot();
+</script>
+</body>
+</html>

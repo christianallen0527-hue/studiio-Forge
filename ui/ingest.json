@@ -1,0 +1,20 @@
+{
+  "sources": [],
+  "watch_braw_volumes": false,
+  "camera_forge": {
+    "enabled": true,
+    "desk_url": "http://127.0.0.1:8790",
+    "watch_dirs": [
+      "/Volumes/Studio Files/AUTOEDITING FORGE Inbox",
+      "~/Movies/AUTOEDITING FORGE Staging",
+      "~/Desktop/BRAW from Camera Forge"
+    ],
+    "staging_dirs": [
+      "~/Movies/AUTOEDITING FORGE Staging",
+      "~/Movies/AUTOEDITING FORGE Inbox",
+      "~/Movies/AutoEdit Inbox",
+      "~/Desktop/BRAW from Camera Forge"
+    ],
+    "auto_backend": "resolve"
+  }
+}

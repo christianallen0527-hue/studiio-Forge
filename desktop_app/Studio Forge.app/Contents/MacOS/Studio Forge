@@ -1,0 +1,28 @@
+#!/bin/bash
+# Studio Forge.app — opens the full Studio Forge control surface.
+# Delegates to the .command so macOS grants normal user file access
+# (Desktop/.venv is blocked when Python is started directly from a .app).
+set -euo pipefail
+
+APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RES="$APP_DIR/Resources"
+ENGINE=""
+if [[ -f "$RES/engine.root" ]]; then
+  ENGINE="$(/usr/bin/head -n 1 "$RES/engine.root" | tr -d '\r')"
+fi
+if [[ -z "${ENGINE}" || ! -d "$ENGINE" ]]; then
+  for cand in "/Users/studio/Desktop/auto-edit-forge" "$HOME/Desktop/auto-edit-forge"; do
+    [[ -f "$cand/ui/Open Studio Forge.command" ]] && ENGINE="$cand" && break
+  done
+fi
+
+CMD="$ENGINE/ui/Open Studio Forge.command"
+if [[ ! -f "$CMD" ]]; then
+  osascript -e 'display dialog "Studio Forge engine not found.\nExpected Desktop/auto-edit-forge" with title "Studio Forge" buttons {"OK"} default button 1'
+  exit 1
+fi
+
+/bin/chmod +x "$CMD" 2>/dev/null || true
+# open the command in Terminal (has Desktop access) — keeps Dock icon for this app
+open "$CMD"
+exit 0

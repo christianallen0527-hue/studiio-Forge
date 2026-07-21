@@ -1,0 +1,34 @@
+# Live test of the cinematic Resolve backend on the synthetic clips.
+angles:
+  - {name: host,   video: raw/cam_host.mov,   mic: raw/mic_host.wav}
+  - {name: cohost, video: raw/cam_cohost.mov, mic: raw/mic_cohost.wav}
+  - {name: guest,  video: raw/cam_guest.mov,  mic: raw/mic_guest.wav}
+  - {name: wide,   video: raw/cam_wide.mov}
+
+wide: wide
+
+switch:
+  min_shot_sec: 1.0
+  overlap_to_wide: true
+  fallback: wide
+
+sync: {enabled: false}
+
+title:
+  text: "The Studio Show"
+  subtitle: "Episode 1"
+  duration: 3
+
+# Sine-tone mics won't transcribe, so skip the whisper-dependent stages here;
+# structural test of title-card + camera switching + mixed audio track.
+refine: {remove_fillers: false, remove_pauses: false}
+transcribe: {enabled: false}
+shorts: {enabled: false}
+
+output:
+  backend: resolve
+  render: false
+  project_name: AUTOEDITING FORGE
+  fps: 30
+  width: 1280
+  height: 720

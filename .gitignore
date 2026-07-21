@@ -1,0 +1,17 @@
+.venv/
+ui/jobs/
+**/out/
+**/_work/
+__pycache__/
+*.pyc
+.DS_Store
+test/raw/
+.env
+.env.*
+!.env.example
+# Learning samples are large / regenerable; keep the growing store.json
+data/learning/samples/
+.cursor/
+dist/
+*.log
+/tmp/

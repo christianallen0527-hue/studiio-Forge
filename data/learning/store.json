@@ -1,0 +1,304 @@
+{
+  "version": 1,
+  "updated_at": 1784673557.846088,
+  "references": [
+    {
+      "source": "assets/sponsor/high_place_mortgage_sponsor_stock.mp4",
+      "title": "high_place_mortgage_sponsor_stock.mp4",
+      "channel": "local",
+      "studied_at": 1784673418.927756,
+      "features": {
+        "duration_sec": 10.233,
+        "has_audio": true,
+        "median_shot_sec": 10.23,
+        "cut_count_est": 0,
+        "loudness_lufs": -70.0,
+        "shake_score": 0.0,
+        "dark_card_ratio": 0.0,
+        "uses_dissolves": true
+      },
+      "labels": [
+        "good_pacing",
+        "good_music"
+      ],
+      "notes": "first loved HPM ad"
+    }
+  ],
+  "feedback": [
+    {
+      "at": 1784672978.702683,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "shaky last clips \u2014 stabilize",
+      "tags": [
+        "shake"
+      ]
+    },
+    {
+      "at": 1784672978.703077,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "music hard-loop seam in the middle",
+      "tags": [
+        "music_seam"
+      ]
+    },
+    {
+      "at": 1784672978.703351,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "typing click SFX \u2014 remove",
+      "tags": [
+        "sfx"
+      ]
+    },
+    {
+      "at": 1784672978.703596,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "80s navy gold dated cards",
+      "tags": [
+        "dated"
+      ]
+    },
+    {
+      "at": 1784672978.703836,
+      "subject": "sponsor",
+      "sentiment": "wanted",
+      "text": "original first-ad upbeat clean music only",
+      "tags": [
+        "good_music"
+      ]
+    },
+    {
+      "at": 1784672978.7040849,
+      "subject": "sponsor",
+      "sentiment": "wanted",
+      "text": "modern kinetic type over live house footage",
+      "tags": [
+        "modern"
+      ]
+    },
+    {
+      "at": 1784672978.7043378,
+      "subject": "general",
+      "sentiment": "wanted",
+      "text": "smooth dissolves and seamless music",
+      "tags": [
+        "smooth",
+        "good_music"
+      ]
+    },
+    {
+      "at": 1784673557.777518,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "shaky last clips \u2014 stabilize, never deliver wobble",
+      "tags": [
+        "no_shaky_tails"
+      ]
+    },
+    {
+      "at": 1784673557.777899,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "music hard-loop seam in the middle \u2014 must be seamless",
+      "tags": [
+        "seamless_music_only"
+      ]
+    },
+    {
+      "at": 1784673557.778284,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "typing click SFX \u2014 remove, clean music only",
+      "tags": [
+        "no_click_sfx"
+      ]
+    },
+    {
+      "at": 1784673557.778649,
+      "subject": "sponsor",
+      "sentiment": "not_okay",
+      "text": "80s navy gold dated cards \u2014 modern kinetic over house only",
+      "tags": [
+        "no_dated_cards"
+      ]
+    },
+    {
+      "at": 1784673557.779021,
+      "subject": "general",
+      "sentiment": "not_okay",
+      "text": "jump cuts feel bad \u2014 prefer smooth dissolves",
+      "tags": [
+        "no_jump_cuts"
+      ]
+    },
+    {
+      "at": 1784673557.779636,
+      "subject": "general",
+      "sentiment": "wanted",
+      "text": "smooth dissolves and seamless music beds",
+      "tags": [
+        "smooth"
+      ]
+    }
+  ],
+  "ratings": [
+    {
+      "at": 1784673557.846064,
+      "path": "assets/sponsor/high_place_mortgage_sponsor_stock.mp4",
+      "job_id": "",
+      "rating": 18,
+      "category": "sponsor",
+      "notes": "first loved ad \u2014 reference quality",
+      "context": {}
+    }
+  ],
+  "dislikes": [
+    {
+      "at": 1784673557.777518,
+      "situation": "sponsor",
+      "text": "shaky last clips \u2014 stabilize, never deliver wobble",
+      "tags": [
+        "no_shaky_tails"
+      ],
+      "rules": [
+        {
+          "code": "no_shaky_tails",
+          "instruction": "Never deliver shaky handheld tails; stabilize or re-cut."
+        }
+      ],
+      "context": {},
+      "source": "seed"
+    },
+    {
+      "at": 1784673557.777899,
+      "situation": "sponsor",
+      "text": "music hard-loop seam in the middle \u2014 must be seamless",
+      "tags": [
+        "seamless_music_only"
+      ],
+      "rules": [
+        {
+          "code": "seamless_music_only",
+          "instruction": "Music beds must crossfade-loop with no audible restart."
+        }
+      ],
+      "context": {},
+      "source": "seed"
+    },
+    {
+      "at": 1784673557.778284,
+      "situation": "sponsor",
+      "text": "typing click SFX \u2014 remove, clean music only",
+      "tags": [
+        "no_click_sfx"
+      ],
+      "rules": [
+        {
+          "code": "no_click_sfx",
+          "instruction": "No typing/click/UI SFX beds \u2014 clean music only unless asked."
+        }
+      ],
+      "context": {},
+      "source": "seed"
+    },
+    {
+      "at": 1784673557.778649,
+      "situation": "sponsor",
+      "text": "80s navy gold dated cards \u2014 modern kinetic over house only",
+      "tags": [
+        "no_dated_cards"
+      ],
+      "rules": [
+        {
+          "code": "no_dated_cards",
+          "instruction": "No navy/gold 80s bank title cards; use modern kinetic type over live footage."
+        }
+      ],
+      "context": {},
+      "source": "seed"
+    },
+    {
+      "at": 1784673557.779021,
+      "situation": "general",
+      "text": "jump cuts feel bad \u2014 prefer smooth dissolves",
+      "tags": [
+        "no_jump_cuts"
+      ],
+      "rules": [
+        {
+          "code": "no_jump_cuts",
+          "instruction": "Prefer smooth dissolves; avoid jump-cutty speech joins."
+        }
+      ],
+      "context": {},
+      "source": "seed"
+    }
+  ],
+  "active_rules": {
+    "global": {
+      "no_shaky_tails": "Never deliver shaky handheld tails; stabilize or re-cut.",
+      "seamless_music_only": "Music beds must crossfade-loop with no audible restart.",
+      "no_click_sfx": "No typing/click/UI SFX beds \u2014 clean music only unless asked.",
+      "no_dated_cards": "No navy/gold 80s bank title cards; use modern kinetic type over live footage.",
+      "no_jump_cuts": "Prefer smooth dissolves; avoid jump-cutty speech joins."
+    },
+    "sponsor": {
+      "no_shaky_tails": "Never deliver shaky handheld tails; stabilize or re-cut.",
+      "seamless_music_only": "Music beds must crossfade-loop with no audible restart.",
+      "no_click_sfx": "No typing/click/UI SFX beds \u2014 clean music only unless asked.",
+      "no_dated_cards": "No navy/gold 80s bank title cards; use modern kinetic type over live footage."
+    },
+    "general": {
+      "no_jump_cuts": "Prefer smooth dissolves; avoid jump-cutty speech joins."
+    }
+  },
+  "category_priors": {
+    "sponsor": {
+      "rating_history": [
+        18
+      ],
+      "rating_avg": 18.0
+    }
+  },
+  "priors": {
+    "min_shot_sec": 4.0,
+    "speech_transition_sec": 0.45,
+    "transition_sec": 0.65,
+    "fade_sec": 0.8,
+    "music_required_on_sponsor": true,
+    "music_must_be_seamless": true,
+    "forbid_shaky_tails": true,
+    "forbid_dated_title_cards": true,
+    "forbid_click_sfx": true,
+    "prefer_smooth_dissolves": true,
+    "target_lufs": -14.0,
+    "avg_cut_sec": 10.21,
+    "cold_open_sec": 8.0,
+    "sponsor_min_sec": 20.0,
+    "confidence": 0.98,
+    "style_tags": [
+      "clean",
+      "high_rated",
+      "learned",
+      "modern",
+      "smooth",
+      "sponsor"
+    ],
+    "rating_target": 18,
+    "push_harder": true,
+    "last_high_rating": 18,
+    "rating_avg": 18.0
+  },
+  "stats": {
+    "references_studied": 1,
+    "feedback_events": 13,
+    "apply_count": 0,
+    "dislikes_count": 5,
+    "ratings_count": 1,
+    "rating_sum": 18.0,
+    "rating_avg": 18.0
+  }
+}

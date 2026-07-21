@@ -1,0 +1,130 @@
+# ── AUTOEDITING FORGE project file ─────────────────────────────────────────────
+# Copy this to `project.yaml` and point the paths at your recording.
+# Every "angle" is one camera. Give the angle a `mic:` when a specific person's
+# isolated microphone belongs to that camera — that's what drives the switching.
+#
+# IMPORTANT: ffmpeg cannot read Blackmagic RAW (.braw). Record ProRes/H.264 on
+# the cameras, OR export ProRes proxies from DaVinci Resolve first, and point
+# `video:` at those files.
+
+angles:
+  - name: host
+    video: raw/cam_host.mov
+    mic:   raw/mic_host.wav
+
+  - name: cohost
+    video: raw/cam_cohost.mov
+    mic:   raw/mic_cohost.wav
+
+  - name: guest
+    video: raw/cam_guest.mov
+    mic:   raw/mic_guest.wav
+
+  # A wide/room camera with no dedicated mic — used during cross-talk & silence.
+  - name: wide
+    video: raw/cam_wide.mov
+
+  # Optional remote Zoom guest. Record "separate audio per participant" in Zoom
+  # so the guest has their own clean track; drop their video + audio here.
+  # - name: zoom_guest
+  #   video: raw/zoom_guest.mp4
+  #   mic:   raw/zoom_guest.m4a
+
+wide: wide            # which angle above is the wide shot (optional)
+
+switch:
+  window_sec: 0.1     # analysis resolution
+  activation_db: -35  # absolute floor — a mic quieter than this never counts
+  min_shot_sec: 2.5   # never cut faster than this (raise for smoother podcast)
+  overlap_to_wide: true   # cut to the wide shot when 2+ people talk at once
+  fallback: wide      # when nobody talks: "wide" or "hold" (stay on last cam)
+  # Video follows audio: if an angle has no mic:, use that camera's embedded audio.
+  video_follows_audio: true
+  relative_activation_db: 8   # must rise this many dB above its own noise floor
+  switch_margin_db: 2         # stay on current speaker unless another is +2 dB louder
+
+sync:
+  enabled: true       # auto-align cameras & mics by their audio
+  reference: host     # everything is aligned to this angle's mic
+  max_offset_sec: 5.0
+  # If auto-sync gets one source wrong, nudge it by hand (seconds):
+  # manual_offsets:
+  #   vid:guest: 0.20
+  #   mic:guest: 0.20
+
+silence:
+  remove: false       # true = also cut long dead-air gaps
+  min_gap_sec: 1.5
+  keep_pad_sec: 0.3
+
+output:
+  dir: out
+  width: 1920
+  height: 1080
+  fps: 30
+  # Rendering engine:
+  #   ffmpeg  = free, fully headless, but CANNOT read .braw (use ProRes/H.264)
+  #   resolve = drives your DaVinci Resolve Studio locally; reads .braw natively
+  backend: resolve
+  render: false            # resolve: false = build timeline to review; true = also render
+  project_name: AUTOEDITING FORGE
+  render_preset: "H.264 Master"
+
+# ── Cinematic touches ─────────────────────────────────────────────────────────
+title:                # a fading title card at the very front (leave text blank to skip)
+  text: "The Show"
+  subtitle: "Episode 12"
+  duration: 4
+
+intro:
+  video: null         # optional: path to a pre-made branded intro clip (plays first)
+sponsor:
+  video: null         # optional: sponsor-read spot
+  placement: midroll  # midroll (middle of body) | after_title
+outro:
+  video: null         # optional: path to a pre-made outro clip (plays last)
+
+# ── Editorial finish (ffmpeg assemble) ────────────────────────────────────────
+# Smart joins: dissolves only at intro/title/sponsor/outro boundaries.
+# Speech jump-cuts stay hard/micro with a short audio crossfade (no mush).
+finish:
+  transitions: true
+  transition_sec: 0.5                 # structural cross-dissolve length
+  speech_transition_sec: 0.0          # body→body visual dissolve (0 = hard/micro)
+  speech_audio_crossfade_sec: 0.04    # body→body acrossfade when speech visual is 0
+  fade_sec: 0.5                       # program fade in from / out to black
+  audio_normalize: true               # loudnorm final mix to -14 LUFS
+  # Legacy "dissolve every cut": set speech_transition_sec: 0.5
+
+# ── Transcript-driven smoothing (needs faster-whisper) ────────────────────────
+refine:
+  remove_fillers: true
+  # Words to cut. "and / so / like / you know" are aggressive (often real speech) —
+  # remove them from this list if the edit feels choppy.
+  filler_words: [um, uh, uhm, er, erm, ah, hmm, mm, "you know", "i mean", like, and, so]
+  remove_pauses: true
+  pause_sec: 0.6      # gaps longer than this get tightened
+  keep_pad_sec: 0.15  # breathing room left around each cut
+
+transcribe:
+  enabled: true
+  model: base         # tiny | base | small | medium (bigger = slower, better)
+
+shorts:
+  enabled: true
+  count: 5
+  min_sec: 20
+  max_sec: 60
+  captions: true
+
+# ── Hardwired Ollama vision (semantic; never replaces LUFS/YuNet/blackdetect)
+# AUTOEDITING FORGE auto-starts Ollama and pulls the model. Leave enabled: on.
+# Env: AUTOEDIT_VISION=0 only for tests. AUTOEDIT_VISION_MODEL / AUTOEDIT_VISION_URL.
+vision:
+  enabled: on                # on (required) | off (tests only)
+  model: moondream
+  base_url: http://127.0.0.1:11434
+  timeout_sec: 45
+  samples: 3                 # stills sampled per source clip (pre-edit)
+  qc_samples: 5              # stills sampled from finished edit (post-edit QC)
+  # workdir: out/vision_cache  # optional frame-cache root; default is beside each media file

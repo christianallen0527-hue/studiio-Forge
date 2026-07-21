@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Install (runs every day at 6:30 AM local):
+    cp scripts/com.autoeditingforge.dailylearning.plist ~/Library/LaunchAgents/
+    # edit the paths inside if the repo moves
+    launchctl load ~/Library/LaunchAgents/com.autoeditingforge.dailylearning.plist
+
+  Unload:
+    launchctl unload ~/Library/LaunchAgents/com.autoeditingforge.dailylearning.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.autoeditingforge.dailylearning</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/studio/Desktop/auto-edit-forge/.venv/bin/python</string>
+    <string>-m</string>
+    <string>autoedit.learning</string>
+    <string>daily</string>
+    <string>--per-category</string>
+    <string>3</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/studio/Desktop/auto-edit-forge</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>6</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/studio/Movies/AUTOEDITING FORGE Staging/learning-daily.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/studio/Movies/AUTOEDITING FORGE Staging/learning-daily.err</string>
+</dict>
+</plist>

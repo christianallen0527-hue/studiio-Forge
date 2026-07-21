@@ -1,0 +1,39 @@
+angles:
+  - name: host
+    video: raw/cam_host.mov
+    mic:   raw/mic_host.wav
+  - name: cohost
+    video: raw/cam_cohost.mov
+    mic:   raw/mic_cohost.wav
+  - name: guest
+    video: raw/cam_guest.mov
+    mic:   raw/mic_guest.wav
+  - name: wide
+    video: raw/cam_wide.mov
+
+wide: wide
+
+switch:
+  window_sec: 0.1
+  activation_db: -35
+  min_shot_sec: 1.0
+  overlap_to_wide: true
+  fallback: wide
+
+sync:
+  enabled: false        # synthetic mics share no room bleed; test switching only
+
+silence:
+  remove: false
+
+output:
+  dir: out
+  width: 1280
+  height: 720
+  fps: 30
+
+transcribe:
+  enabled: true         # faster-whisper not installed -> should skip gracefully
+
+shorts:
+  enabled: true
